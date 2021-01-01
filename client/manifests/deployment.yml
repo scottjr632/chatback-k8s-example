@@ -1,0 +1,22 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: frontend 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend 
+    spec:
+      containers:
+        - name: frontend 
+          image: srich.azurecr.io/frontend
+          ports:
+          - containerPort: 80
+          env:
+          - name: SERVER_URI
+            value: "http://backend:8080"

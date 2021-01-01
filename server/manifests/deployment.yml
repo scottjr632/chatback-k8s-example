@@ -1,0 +1,22 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: backend 
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend 
+    spec:
+      containers:
+        - name: backend 
+          image: srich.azurecr.io/backend
+          ports:
+          - containerPort: 8080
+          env:
+          - name: DB_HOST
+            value: db
