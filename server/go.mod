@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
+	github.com/ansrivas/fiberprometheus/v2 v2.0.1
 	github.com/friendsofgo/errors v0.9.2
 	github.com/gofiber/fiber/v2 v2.3.0
 	github.com/gofiber/websocket/v2 v2.0.2

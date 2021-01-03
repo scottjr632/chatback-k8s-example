@@ -3,37 +3,55 @@ version: '3'
 services:
 
   backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
+    image: chatback-server
     networks:
       - cb_network
     environment:
       - DB_HOST=db
+      - BROKER_URI="http://broker:50051"
     ports:
-      - "8080:8080"
+      - "8181:8080"
 
   frontend:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
+    image: chatback-client
     networks:
       - cb_network
     environment:
       - SERVER_URI="http://backend:8080"
     ports:
-      - "3000:80"
+      - "8000:80"
+
+  broker:
+    image: chatback-broker
+    networks: 
+      - cb_network
+    ports:
+      - "50051:50051"
 
   db:
-    build:
-      context: ./db
-      dockerfile: Dockerfile
+    image: chatback-db
     environment:
       - POSTGRES_PASSWORD=password
     networks: 
       - cb_network
     ports:
       - "5432:5432"
+
+  prometheus:
+    image: prom/prometheus
+    networks:
+      - cb_network
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./server/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:7.3.6
+    networks:
+      - cb_network
+    ports:
+      - "3000:3000"
 
 networks:
   cb_network:

@@ -15,7 +15,7 @@ type client struct{}
 
 var clients = make(map[*websocket.Conn]client)
 var register = make(chan *websocket.Conn)
-var broadcast = make(chan models.Message)
+var broadcast = make(chan models.Message, 10)
 var unRegister = make(chan *websocket.Conn)
 
 func sendEventToClients(event models.Message) {

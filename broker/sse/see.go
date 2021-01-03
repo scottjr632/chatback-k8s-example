@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"sync"
+
+	"github.com/scottjr632/chatback/broker/metrics"
 )
 
 // SSE handles the sse connections
@@ -114,12 +116,15 @@ func (sse *sse) startListener() {
 		select {
 		case client := <-sse.register:
 			log.Println("Got new client")
+			metrics.Get().IncActiceClients()
 			sse.clients.Store(client, true)
 		case client := <-sse.unRegister:
 			log.Println("Unregistering client")
+			metrics.Get().DecActiveClients()
 			sse.clients.Delete(client)
 		case msg := <-sse.broadcast:
 			log.Printf("Broadcasting message: %v\n", msg)
+			metrics.Get().IncMessagesSent()
 			sse.clients.Range(func(k interface{}, value interface{}) bool {
 				client := k.(*client)
 				client.messageChan <- msg

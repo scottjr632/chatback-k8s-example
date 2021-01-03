@@ -15,6 +15,8 @@ import (
 	"github.com/gofiber/websocket/v2"
 	_ "github.com/lib/pq"
 	_ "github.com/volatiletech/sqlboiler/v4/queries/qm"
+
+	fiberprometheus "github.com/ansrivas/fiberprometheus/v2"
 )
 
 func init() {
@@ -38,6 +40,11 @@ func main() {
 	h := handlers.New(db, config.Broker)
 
 	app := fiber.New()
+
+	prometheus := fiberprometheus.New("chatback")
+	prometheus.RegisterAt(app, "/metrics")
+	app.Use(prometheus.Middleware)
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Hello, world!")
 	})

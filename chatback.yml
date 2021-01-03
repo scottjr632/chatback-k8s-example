@@ -15,6 +15,7 @@ metadata:
   labels:
     app: chatback
     tier: db
+
 spec:
   # modify replicas according to your case
   replicas: 1
@@ -72,6 +73,9 @@ spec:
     metadata:
       labels:
         tier: broker
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '50051'
     spec:
       containers:
       - name: broker
@@ -88,6 +92,9 @@ kind: Service
 metadata:
   namespace: chatback
   name: broker
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port:   '50051'
 spec:
   selector:
     tier: broker
@@ -116,6 +123,9 @@ spec:
     metadata:
       labels:
         tier: backend
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8080'
     spec:
       containers:
       - name: backend
@@ -137,6 +147,9 @@ kind: Service
 metadata:
   namespace: chatback
   name: backend
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port:   '8080'
 spec:
   selector:
     tier: backend
@@ -189,6 +202,53 @@ spec:
     tier: frontend
   ports:
     - protocol: TCP
-      port: 8080
+      port: 8000
       targetPort: 80
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: grafana
+  namespace: chatback
+  labels:
+    app: chatback
+    tier: grafana
+spec:
+  # modify replicas according to your case
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: grafana
+  template:
+    metadata:
+      labels:
+        tier: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:7.3.6
+        ports:
+          - name: cb-grafana
+            containerPort: 3000
+        env:
+        - name: GF_INSTALL_PLUGINS
+          value: grafana-clock-panel,grafana-simple-json-datasource
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: chatback
+  name: grafana
+spec:
+  selector:
+    tier: grafana
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
   type: LoadBalancer
