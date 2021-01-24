@@ -3,7 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/joho/godotenv"
+	"github.com/scottjr632/chatback/broker/config"
+	"github.com/scottjr632/chatback/broker/discovery"
 	"github.com/scottjr632/chatback/broker/sse"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -14,7 +18,22 @@ const (
 )
 
 func main() {
-	sse := sse.New()
+	godotenv.Load()
+	configFile := os.Getenv("BROKER_CONFIG_PATH")
+	if configFile == "" {
+		configFile = "config.yml"
+	}
+	config, err := config.Load(configFile)
+	if err != nil {
+		panic(err)
+	}
+
+	disc, err := discovery.New(config)
+	if err != nil {
+		panic(err)
+	}
+
+	sse := sse.New(config, disc)
 	http.HandleFunc("/subscribe", sse.Handler)
 	http.HandleFunc("/message", sse.HandlePost)
 

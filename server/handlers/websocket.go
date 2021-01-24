@@ -21,6 +21,7 @@ var unRegister = make(chan *websocket.Conn)
 func sendEventToClients(event models.Message) {
 	for client := range clients {
 		if err := client.WriteJSON(event); err != nil {
+			delete(clients, client)
 			log.Println("writeJson: ", err)
 		}
 	}

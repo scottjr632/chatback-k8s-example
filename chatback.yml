@@ -55,6 +55,19 @@ spec:
 
 ---
 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: broker-config
+  namespace: chatback
+data:
+  config.yml: |-
+    port: 50051
+    discovery: true 
+    labelSelector: tier=broker
+
+---
+
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
@@ -65,7 +78,7 @@ metadata:
     tier: broker
 spec:
   # modify replicas according to your case
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       tier: broker
@@ -84,6 +97,24 @@ spec:
         ports:
           - name: cb-broker
             containerPort: 50051
+        env:
+        - name: BROKER_CONFIG_PATH
+          value: /config/config.yml
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+
+      volumes:
+        # You set volumes at the Pod level, then mount them into containers inside that Pod
+        - name: config
+          configMap:
+            # Provide the name of the ConfigMap you want to mount.
+            name: broker-config
+            # An array of keys from the ConfigMap to create as files
+            items:
+            - key: "config.yml"
+              path: "config.yml"
 
 ---
 

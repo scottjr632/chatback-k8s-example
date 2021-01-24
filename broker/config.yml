@@ -1,0 +1,3 @@
+port: 50051
+discovery: true
+labelSelector: tier=broker
