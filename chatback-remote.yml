@@ -1,0 +1,325 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chatback
+  labels:
+    name: chatback
+
+---
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: db
+  namespace: chatback
+  labels:
+    app: chatback
+    tier: db
+
+spec:
+  # modify replicas according to your case
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: db
+  template:
+    metadata:
+      labels:
+        tier: db
+    spec:
+      containers:
+      - name: db
+        image: scottjr632/chatback-db
+        ports:
+          - name: cb-db
+            containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: password
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: chatback
+  name: db
+spec:
+  selector:
+    tier: db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+    name: broker-svc
+    namespace: chatback
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+    name: broker-role
+    namespace: chatback
+rules:
+    - apiGroups:
+        - ''
+      resources:
+        - 'pods'
+      verbs:
+        - 'create'
+        - 'delete'
+        - 'get'
+        - 'list'
+        - 'patch'
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    name: broker-rolebind
+    namespace: chatback
+subjects:
+    - kind: ServiceAccount
+      name: broker-svc
+      namespace: chatback
+roleRef:
+    kind: Role
+    name: broker-role
+    apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: broker-config
+  namespace: chatback
+data:
+  config.yml: |
+    port: 50051
+    discovery: true 
+    labelSelector: tier=broker
+    namespace: chatback
+
+---
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: broker
+  namespace: chatback
+  labels:
+    app: chatback
+    tier: broker
+spec:
+  # modify replicas according to your case
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: broker
+  template:
+    metadata:
+      labels:
+        tier: broker
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '50051'
+    spec:
+      serviceAccountName: broker-svc
+      containers:
+      - name: broker
+        image: scottjr632/chatback-broker
+        ports:
+          - name: cb-broker
+            containerPort: 50051
+        env:
+        - name: BROKER_CONFIG_PATH
+          value: /config/config.yml
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+
+      volumes:
+        # You set volumes at the Pod level, then mount them into containers inside that Pod
+        - name: config
+          configMap:
+            # Provide the name of the ConfigMap you want to mount.
+            name: broker-config
+            # An array of keys from the ConfigMap to create as files
+            items:
+            - key: "config.yml"
+              path: "config.yml"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: chatback
+  name: broker
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port:   '50051'
+spec:
+  selector:
+    tier: broker
+  ports:
+    - protocol: TCP
+      port: 50051
+      targetPort: 50051
+
+---
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: backend
+  namespace: chatback
+  labels:
+    app: chatback
+    tier: backend
+spec:
+  # modify replicas according to your case
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: backend
+  template:
+    metadata:
+      labels:
+        tier: backend
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8080'
+    spec:
+      containers:
+      - name: backend
+        image: scottjr632/chatback-server
+        ports:
+          - name: cb-backend
+            containerPort: 8080
+        env:
+        - name: DB_HOST
+          value: db
+        - name: BROKER_URI
+          value: http://broker:50051
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: chatback
+  name: backend
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port:   '8080'
+spec:
+  selector:
+    tier: backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: frontend
+  namespace: chatback
+  labels:
+    app: chatback
+    tier: frontend
+spec:
+  # modify replicas according to your case
+  replicas: 2
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: scottjr632/chatback-client
+        ports:
+          - name: cb-fontend
+            containerPort: 80
+        env:
+        - name: SERVER_URI
+          value: "http://backend:8080"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: chatback
+  name: frontend
+spec:
+  selector:
+    tier: frontend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 80
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: grafana
+  namespace: chatback
+  labels:
+    app: chatback
+    tier: grafana
+spec:
+  # modify replicas according to your case
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: grafana
+  template:
+    metadata:
+      labels:
+        tier: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: scottjr632/grafana/grafana:7.3.6
+          - name: cb-grafana
+            containerPort: 3000
+        env:
+        - name: GF_INSTALL_PLUGINS
+          value: grafana-clock-panel,grafana-simple-json-datasource
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: chatback
+  name: grafana
+spec:
+  selector:
+    tier: grafana
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: LoadBalancer
