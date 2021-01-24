@@ -44,7 +44,7 @@ func New(config *config.Config) (*Discovery, error) {
 // k8s API using the LabelSelector
 func (d *Discovery) GetBrokerPodsIPs() ([]string, error) {
 	ips := []string{}
-	pods, err := d.client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
+	pods, err := d.client.CoreV1().Pods(d.config.Namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: d.config.LabelSelector,
 	})
 	if err != nil {

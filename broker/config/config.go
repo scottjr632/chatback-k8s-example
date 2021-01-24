@@ -11,6 +11,7 @@ type Config struct {
 	Port          string `yaml:"port"`
 	Discovery     bool   `yaml:"discovery"`
 	LabelSelector string `yaml:"labelSelector"`
+	Namespace     string `yaml:"namespace"`
 }
 
 func (c *Config) applyDefaults() {
