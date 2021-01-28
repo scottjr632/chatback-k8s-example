@@ -3,7 +3,8 @@ version: '3'
 services:
 
   backend:
-    image: chatback-server
+    build:
+      context: ./server
     networks:
       - cb_network
     environment:
@@ -13,7 +14,8 @@ services:
       - "8181:8080"
 
   frontend:
-    image: chatback-client
+    build:
+      context: ./client
     networks:
       - cb_network
     environment:
@@ -22,14 +24,16 @@ services:
       - "8000:80"
 
   broker:
-    image: chatback-broker
+    build:
+      context: ./broker
     networks: 
       - cb_network
     ports:
       - "50051:50051"
 
   db:
-    image: chatback-db
+    build:
+      context: ./db
     environment:
       - POSTGRES_PASSWORD=password
     networks: 

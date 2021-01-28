@@ -301,7 +301,8 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: scottjr632/grafana/grafana:7.3.6
+        image: grafana/grafana:7.3.6
+        ports:
           - name: cb-grafana
             containerPort: 3000
         env:

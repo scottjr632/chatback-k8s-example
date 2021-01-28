@@ -18,9 +18,7 @@ while getopts 'ru:p:' flag; do
   esac
 done
 
-if [[ $USE_REMOTE == 'true' ]]; then
-    IMAGE_PREFIX="$USER/$IMAGE_PREFIX"
-fi
+IMAGE_PREFIX="$USER/$IMAGE_PREFIX"
 
 docker build -t $IMAGE_PREFIX-db ./db
 docker build -t $IMAGE_PREFIX-client ./client
