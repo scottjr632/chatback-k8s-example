@@ -1,5 +1,7 @@
 import React, { FC, useContext, useEffect, useRef, useState } from 'react';
+
 import { Message } from '../types';
+import ReconnectingWebSocket from 'reconnecting-websocket';
 
 interface State {
   message: Message | undefined;
@@ -12,15 +14,15 @@ const MessagesContext = React.createContext<State>({
 });
 
 export const MessagesProvider: FC = ({ children }) => {
-  const socketRef = useRef<WebSocket | null>(null);
+  const socketRef = useRef<ReconnectingWebSocket | null>(null);
   const [message, setMessage] = useState<Message | undefined>();
 
   useEffect(() => {
-    socketRef.current = new WebSocket(`ws://${window.location.host}/ws/messages`);
-    socketRef.current.onmessage = (e) => {
+    socketRef.current = new ReconnectingWebSocket(`ws://${window.location.host}/ws/messages`);
+    socketRef.current.addEventListener('message', e => {
       console.log(e);
       setMessage(JSON.parse(e.data));
-    };
+    });
   }, []);
 
   const sendMessage = (send: Message) => {
