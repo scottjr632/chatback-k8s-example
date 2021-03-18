@@ -1,14 +1,14 @@
 #!/bin/bash
 
-USE_REMOTE='false'
+USE_REMOTE='true'
 
 print_usage() {
   printf "Usage: \n\tr - use remote?"
 }
 
-while getopts 'r' flag; do
+while getopts 'l' flag; do
   case "${flag}" in
-    r) USE_REMOTE='true' ;;
+    l) USE_REMOTE='false' ;;
     *) print_usage
        exit 1 ;;
   esac
