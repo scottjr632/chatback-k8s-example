@@ -189,7 +189,7 @@ metadata:
     tier: backend
 spec:
   # modify replicas according to your case
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       tier: backend
