@@ -210,8 +210,6 @@ spec:
         env:
         - name: DB_HOST
           value: db
-        - name: BROKER_URI
-          value: http://broker:50051
 
 ---
 
