@@ -50,6 +50,8 @@ func main() {
 	})
 
 	app.Get("/api/messages", h.GetMessages)
+	app.Post("/api/messages", h.NewMessage)
+
 	app.Use("/ws", h.UpgradeWebsocket)
 	app.Get("/ws/messages", websocket.New(h.WebsocketMessages))
 
